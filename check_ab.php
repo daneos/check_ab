@@ -119,6 +119,11 @@
 	}
 
 	$max = get_max($rrdxml, $num, $db);
+	if($max == NULL)
+	{
+		echo "UNKNOWN: Failed to parse RRD\n";
+		return $STATE_UNKNOWN;
+	}
 	$reqperc = 100 - (($max / $rps)*100);
 	if($reqperc < $percent[0])
 	{
