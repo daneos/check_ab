@@ -20,15 +20,37 @@
 		echo "Options:\n";
 		echo "-u URL (required)\n";
 		echo "-f RRD file (required)\n";
-		echo "-n (x:y) x-request count y-one time request count (defaults to 1000:100)";
-		echo "-p (x:y) x-percent for CRIT y-percent for WARN (defaults to 5:10)";
-		echo "-d (x:y) RRD database to check x-seconds y-name (defaults to (86400:MAX)";
-		echo "-a number of last entries checked (defaults to 7)\n";
+		echo "-n request count (defaults to 1000)\n"; 
+		echo "-c concurrent request count (defaults to 100)\n";
+		echo "-C percent for CRIT (defaults to 5)\n";
+		echo "-W percent for WARN 10)\n";
+		echo "-d RRD database to check (defaults to MAX)\n";
+		echo "-D database by time (defaults to 86400)";
+		echo "-a number of last entries to check (defaults to 7)\n";
 		echo "-h shows this help message\n";
 		echo "Example: ".$argv[0]." -u http://example.com/ -f test.rrd -n 10000:100 -p 10:20 -d 300:AVERAGE\n";
 	}
 
-	$options = getopt("hd:u:p:a:f:n:");
+	function get_max($rrd, $num, $db)
+	{
+		$max = 0;
+		foreach($rrd->rra as $rra)
+		{
+			if($rra->pdp_per_row != $db[0]/$rrd->step) continue;
+			if($rra->cf != $db[1]) continue;
+			$rows = $rra->database->row;
+			break;
+		}
+		$rowcount = count($rows);
+		for($i=0; $i < $num; $i++)
+		{
+			$cval = sscanf($rows[$rowcount - $i - 1]->v, "%E");
+			if($cval[0] > $max) $max = $cval[0];
+		}
+		return $max;
+	}
+
+	$options = getopt("hd:u:a:f:n:c:C:W:D:");
 	foreach($options as $option=>$val)
 	{
 		switch($option)
@@ -40,13 +62,21 @@
 				$file = $val;
 				break;
 			case 'n':
-				$reqcnt = explode(':', $val);
+				$reqcnt[0] = $val;
 				break;
-			case 'p':
-				$percent = explode(':', $val);
+			case 'c':
+				$reqcnt[1] = $val;
+			case 'C':
+				$percent[0] = $val;
+				break;
+			case 'W':
+				$percent[1] = $val;
 				break;
 			case 'd':
-				$db = explode(':', $val);
+				$db[0] = $val;
+				break;
+			case 'D':
+				$db[1] = $val;
 				break;
 			case 'a':
 				$num = $val;
@@ -79,49 +109,26 @@
 	exec("rrdtool dump ".escapeshellarg($file), $rrd);
 	$rrdxml = simplexml_load_string(implode('', $rrd));
 
-	$regexp="~Requests per second\:.*[0-9\.]+~";
-	for($i=0; $i < count($ab); $i++)
-	{
-		if(preg_match($regexp, $ab[$i], $match))
-		{
-			$exploded = explode(':', $match[0]);
-			$rps = trim($exploded[1]);
-			break;
-		}
-	}
-	if(!$rps)
+	preg_match("/Requests per second\:.*?([0-9\.]+) \[#\/sec\] \(mean\)/", $ab_out, $match);
+	$rps = $match[1];
+
+	if(!isset($rps))
 	{
 		echo "UNKNOWN: ab failed\n";
 		return $STATE_UNKNOWN;
 	}
 
-	for($i=0; $i < count($rrdxml->rra); $i++)
+	$max = get_max($rrdxml, $num, $db);
+	$reqperc = 100 - (($max / $rps)*100);
+	if($reqperc < $percent[0])
 	{
-		if($rrdxml->rra[$i]->pdp_per_row == $db[0]/$rrdxml->step)
-		{
-			if($rrdxml->rra[$i]->cf == $db[1])
-			{
-				$rowcount = count($rrdxml->rra[$i]->database->row);
-				for($j=0; $j < $num; $j++)
-				{
-					$acc = explode('e', $rrdxml->rra[$i]->database->row[$rowcount - $j - 1]->v);
-					$norm = $acc[0] * pow(10, $acc[1]);
-					$reqperc = 100 - (($norm / $rps)*100);
-					echo $norm." | ".$acc[0]." | ".$acc[1]." | ".$reqperc." | ".$rps."\n";
-					if($reqperc < $percent[0])
-					{
-						echo "CRITICAL: Server can handle ".$reqperc."% more requests\n";
-						return $STATE_CRITICAL;
-					}
-					if($reqperc < $percent[1])
-					{
-						echo "WARNING: Server can handle ".$reqperc."% more requests\n";
-						return $STATE_WARNING;
-					}
-
-				}
-			}
-		}
+		echo "CRITICAL: Server can handle ".$reqperc."% more requests\n";
+		return $STATE_CRITICAL;
+	}
+	if($reqperc < $percent[1])
+	{
+		echo "WARNING: Server can handle ".$reqperc."% more requests\n";
+		return $STATE_WARNING;
 	}
 	echo "OK: Requests per second: ".$rps."\n";
 	return $STATE_OK;
