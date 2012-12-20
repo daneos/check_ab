@@ -33,7 +33,7 @@
 
 	function get_max($rrd, $num, $db)
 	{
-		$max = 0;
+		$max = NULL;
 		foreach($rrd->rra as $rra)
 		{
 			if($rra->pdp_per_row != $db[0]/$rrd->step) continue;
