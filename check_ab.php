@@ -127,12 +127,14 @@
 	$reqperc = 100 - (($max / $rps)*100);
 	if($reqperc < $percent[0])
 	{
-		echo "CRITICAL: Server can handle ".$reqperc."% more requests\n";
+		echo "CRITICAL: Server can handle ".sprintf("%.3f", $reqperc)."% more requests\n";
+		echo "Tested: ".$rps."; In RRD: ".$max.";\n";
 		return $STATE_CRITICAL;
 	}
 	if($reqperc < $percent[1])
 	{
-		echo "WARNING: Server can handle ".$reqperc."% more requests\n";
+		echo "WARNING: Server can handle ".sprintf("%.3f", $reqperc)."% more requests\n";
+		echo "Tested: ".$rps."; In RRD: ".$max.";\n";
 		return $STATE_WARNING;
 	}
 	echo "OK: Requests per second: ".$rps."\n";
