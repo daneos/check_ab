@@ -15,6 +15,7 @@
 
 	function usage()
 	{
+		global $argv;
 		echo "Usage: ".$argv[0]." <options>\n";
 		echo "Compare Apache benchmark req/sec with RRD file\n";
 		echo "Options:\n";
