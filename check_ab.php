@@ -28,7 +28,7 @@
 		echo "-D database by time (defaults to 86400)";
 		echo "-a number of last entries to check (defaults to 7)\n";
 		echo "-h shows this help message\n";
-		echo "Example: ".$argv[0]." -u http://example.com/ -f test.rrd -n 10000:100 -p 10:20 -d 300:AVERAGE\n";
+		echo "Example: ".$argv[0]." -u http://example.com/ -f test.rrd -n 10000 -c 100 -C 10 -W 20 -d AVERAGE -D 300 -a 10\n";
 	}
 
 	function get_max($rrd, $num, $db)
