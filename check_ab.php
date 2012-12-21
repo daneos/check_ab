@@ -25,7 +25,7 @@
 		echo "-C percent for CRIT (defaults to 5)\n";
 		echo "-W percent for WARN 10)\n";
 		echo "-d RRD database to check (defaults to MAX)\n";
-		echo "-D database by time (defaults to 86400)";
+		echo "-D database by time (defaults to 86400)\n";
 		echo "-a number of last entries to check (defaults to 7)\n";
 		echo "-h shows this help message\n";
 		echo "Example: ".$argv[0]." -u http://example.com/ -f test.rrd -n 10000 -c 100 -C 10 -W 20 -d AVERAGE -D 300 -a 10\n";
@@ -125,17 +125,18 @@
 		return $STATE_UNKNOWN;
 	}
 	$reqperc = 100 - (($max / $rps)*100);
-	if($reqperc < $percent[0])
+	if($reqperc < (float)$percent[0])
 	{
 		echo "CRITICAL: Server can handle ".sprintf("%.3f", $reqperc)."% more requests\n";
 		echo "Tested: ".$rps."; In RRD: ".$max.";\n";
 		return $STATE_CRITICAL;
 	}
-	if($reqperc < $percent[1])
+	if($reqperc < (float)$percent[1])
 	{
 		echo "WARNING: Server can handle ".sprintf("%.3f", $reqperc)."% more requests\n";
 		echo "Tested: ".$rps."; In RRD: ".$max.";\n";
 		return $STATE_WARNING;
 	}
 	echo "OK: Requests per second: ".$rps."\n";
+	echo "Tested: ".$rps."; In RRD: ".$max."; Percent: ".sprintf("%.3f", $reqperc).";\n";
 	return $STATE_OK;
