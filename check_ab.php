@@ -16,18 +16,22 @@
 	function usage()
 	{
 		global $argv;
+		global $reqcnt;
+		global $percent;
+		global $db;
+		global $num;
 		echo "Usage: ".$argv[0]." <options>\n";
 		echo "Compare Apache benchmark req/sec with RRD file\n";
 		echo "Options:\n";
 		echo "-u URL (required)\n";
 		echo "-f RRD file (required)\n";
-		echo "-n request count (defaults to 1000)\n"; 
-		echo "-c concurrent request count (defaults to 100)\n";
-		echo "-C percent for CRIT (defaults to 5)\n";
-		echo "-W percent for WARN 10)\n";
-		echo "-d RRD database to check (defaults to MAX)\n";
-		echo "-D database by time (defaults to 86400)\n";
-		echo "-a number of last entries to check (defaults to 7)\n";
+		echo "-n request count (defaults to ".$reqcnt[0].")\n"; 
+		echo "-c concurrent request count (defaults to ".$reqcnt[1].")\n";
+		echo "-C percent for CRIT (defaults to ".$percent[0].")\n";
+		echo "-W percent for WARN ".$percent[1].")\n";
+		echo "-d RRD database to check (defaults to ".$db[1].")\n";
+		echo "-D database by time (defaults to ".$db[0].")\n";
+		echo "-a number of last entries to check (defaults to ".$num.")\n";
 		echo "-h shows this help message\n";
 		echo "Example: ".$argv[0]." -u http://example.com/ -f test.rrd -n 10000 -c 100 -C 10 -W 20 -d AVERAGE -D 300 -a 10\n";
 	}
